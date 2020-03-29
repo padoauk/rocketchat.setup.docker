@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copyright (C) Toshinao Ishii <padoauk@gmail.com> All Rights Reserved.
+
 # prepare docker storage and network
 # invoke docker compose
 
