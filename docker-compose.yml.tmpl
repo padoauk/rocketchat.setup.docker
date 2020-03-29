@@ -1,0 +1,60 @@
+version: '3.7'
+
+#
+# The external resources are prepared in the start.sh if necessary.
+# IPv4 of the containers are explicitly defined in this configuration.
+#
+
+services:
+
+  mongo:
+    container_name: {{MongoName}}
+    image: mongo:4.0
+    restart: unless-stopped
+    volumes:
+      - mongo.db:/data/db
+      - type: bind
+        source: ./etc/mongo
+        target: /etc/mongo
+    networks:
+      net172.17.2:
+        ipv4_address: {{MongoIPv4}} 
+    extra_hosts:
+      - "mongo4chat:{{MongoIPv4}}"
+      - "rocketchat:{{RocketChatIPv4}}"
+    command: mongod --oplogSize 128 --replSet rs0 --config /etc/mongo/mongod.conf
+
+  rocketchat:
+    container_name: {{RCName}}
+    image: rocket.chat:latest
+    restart: unless-stopped
+    volumes:
+      - rocketchat.uploads:/app/uploads
+    networks:
+      {{NetworkName}}:
+        ipv4_address: {{RocketChatIPv4}}
+    extra_hosts:
+      - "mongo4chat:{{MongoIPv4}}"
+      - "rocketchat:{{RocketChatIPv4}}"
+    environment:
+      - PORT=3000
+      - ROOT_URL={{RocketChatURL}}
+      - MONGO_URL=mongodb://{{MongoIPv4}}:27017/rocketchat
+      - MONGO_OPLOG_URL=mongodb://mongo4chat:27017/local?replSet=rs0
+      - Accounts_UseDNSDomainCheck=False
+    depends_on:
+      - mongo
+    ports:
+      - 3000:3000
+
+networks:
+  {{NetworkName}}:
+    external: true
+
+volumes:
+  mongo.db:
+    external: true
+  rocketchat.uploads:
+    external: true
+
+
